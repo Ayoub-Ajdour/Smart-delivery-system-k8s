@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+data:
+  kong.yaml: |
+    _format_version: "3.0"
+    services:
+      - name: Auth_Service
+        host: flask-service
+        port: 8081
+        path: /
+        protocol: http
+        routes:
+          - name: auth-service-route
+            paths:
+              - /m1
+            strip_path: true
+            protocols:
+              - http
+              - https
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - http://localhost:4200
+              credentials: true
+              headers:
+                - Accept,Content-Type,Authorization
+              methods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - OPTIONS
+      - name: Hub_Management_Service
+        host: hub-management-service
+        port: 8083
+        path: /
+        protocol: http
+        routes:
+          - name: hub-service-route
+            paths:
+              - /m2
+            strip_path: true
+            protocols:
+              - http
+              - https
+      - name: Delivery_Service
+        host: delivery-service
+        port: 8084
+        path: /
+        protocol: http
+        routes:
+          - name: delivery-service-route
+            paths:
+              - /m3
+            strip_path: true
+            protocols:
+              - http
+              - https
+      - name: Order_Service
+        host: order-service
+        port: 8082
+        path: /
+        protocol: http
+        routes:
+          - name: order-service-route
+            paths:
+              - /m4
+            strip_path: true
+            protocols:
+              - http
+              - https
+    plugins:
+      - name: jwt
+        config:
+          secret_is_base64: true
+          key_claim_name: kid
+          claims_to_verify:
+            - exp
+          run_on_preflight: false

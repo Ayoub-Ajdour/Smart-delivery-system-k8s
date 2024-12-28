@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-gateway
+  template:
+    metadata:
+      labels:
+        app: kong-gateway
+    spec:
+      volumes:
+        - name: kong-config
+          configMap:
+            name: kong-config
+      containers:
+        - name: kong-gateway
+          image: kong:3.5
+          ports:
+            - containerPort: 8000  # Proxy listener
+            - containerPort: 8001  # Admin API listener
+            - containerPort: 8002  # Kong Manager
+            - containerPort: 8443  # Proxy SSL listener
+            - containerPort: 8444  # Admin SSL listener
+            - containerPort: 8445  # Kong Manager SSL
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "kong-database"
+            - name: KONG_PG_USER
+              value: "kong"
+            - name: KONG_PG_PASSWORD
+              value: "kong"
+            - name: KONG_PG_DATABASE
+              value: "kong"
+            - name: KONG_PROXY_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_PROXY_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
+            - name: KONG_ADMIN_GUI_URL
+              value: "http://localhost:8002"
+            - name: KONG_ADMIN_GUI_LISTEN
+              value: "0.0.0.0:8002"
+          volumeMounts:
+            - name: kong-config
+              mountPath: /kong/declarative
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
